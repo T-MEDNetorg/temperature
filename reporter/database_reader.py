@@ -17,30 +17,8 @@ def calculate_percentile(df, cols, percentile_up, percentile_down):
 
     return df_clean
 
-
-mega_dir_list = [f for f in listdir("../src/input_files/Subidos/") if isfile(join("../src/input_files/Subidos/", f))]
-
-# Sets a dict to store all the DataBases insides the big ZIP file
-dico_dfs_txt = {}
-
-# Creates said dict by scraping the info inside the ZIP file
-for zip_filename in mega_dir_list:
-    zip_file = ZipFile("../src/input_files/Subidos/" + zip_filename)
-    for file in zip_file.namelist():
-        if file.endswith(".txt"):
-            temp_df = pd.read_csv(zip_file.open(file), sep='\t')
-            temp_df = calculate_percentile(temp_df, temp_df.columns[2:], 0.99, 0.01)
-            dico_dfs_txt[file] = temp_df
-
-dico_temps = {}
-top_ten_max_temps = pd.DataFrame(columns=['Filename', 'MaxDate', 'Max'])
-top_ten_min_temps = pd.DataFrame(columns=['Filename', 'MinDate', 'Min'])
-# Search in each df for the highest and lowest temperature
-for filename, df in dico_dfs_txt.items():
-    dico_temps[filename] = {'max': float(df[df.columns[2:]].max().max()), 'min': float(df[df.columns[2:]].min().min())}
-
+def temp_series_setter(df, temp_cols, filename):
     # Searches and stores the max and min indexes
-    temp_cols = df.columns[2:]
     max_row_idx = df[temp_cols].idxmax().max()
     min_row_idx = df[temp_cols].idxmin().min()
 
@@ -52,16 +30,83 @@ for filename, df in dico_dfs_txt.items():
     max_series = pd.DataFrame([{'Filename': filename, 'MaxDate': max_date, 'Max': float(df[temp_cols].max().max())}])
     min_series = pd.DataFrame([{'Filename': filename, 'MinDate': min_date, 'Min': float(df[temp_cols].min().min())}])
 
+    return max_series, min_series
+
+
+def top_ten_creator(df, temp_cols, top_ten_max_temps, top_ten_min_temps, max_series, min_series):
     # Stores into the dfs only if they are inside the TOP10
     if len(top_ten_max_temps) < 10:
         top_ten_max_temps = pd.concat([top_ten_max_temps, max_series], ignore_index=True)
         top_ten_min_temps = pd.concat([top_ten_min_temps, min_series], ignore_index=True)
     elif float(df[temp_cols].max().max()) > top_ten_max_temps['Max'].min():
-        top_ten_max_temps.drop(top_ten_max_temps['Max'].idxmin(), inplace = True)
+        top_ten_max_temps.drop(top_ten_max_temps['Max'].idxmin(), inplace=True)
         top_ten_max_temps = pd.concat([top_ten_max_temps, max_series], ignore_index=True)
     elif float(df[temp_cols].min().min()) < top_ten_min_temps['Min'].max():
-        top_ten_min_temps.drop(top_ten_min_temps['Min'].idxmax(), inplace = True)
+        top_ten_min_temps.drop(top_ten_min_temps['Min'].idxmax(), inplace=True)
         top_ten_min_temps = pd.concat([top_ten_min_temps, min_series], ignore_index=True)
+
+    return top_ten_max_temps, top_ten_min_temps
+
+def create_df_dict(dir="../src/input_files/Subidos/"):
+    mega_dir_list = [f for f in listdir(dir) if isfile(join(dir, f))]
+
+    # Sets a dict to store all the DataBases insides the big ZIP file
+    dico_dfs_txt = {}
+
+    # Creates said dict by scraping the info inside the ZIP file
+    for zip_filename in mega_dir_list:
+        zip_file = ZipFile(dir + zip_filename)
+        for file in zip_file.namelist():
+            if file.endswith(".txt"):
+                temp_df = pd.read_csv(zip_file.open(file), sep='\t')
+                temp_df = calculate_percentile(temp_df, temp_df.columns[2:], 0.99, 0.01)
+                # Converts Date column to Datetime format
+                temp_df['Date'] = pd.to_datetime(temp_df['Date'], format='%d/%m/%Y')
+                dico_dfs_txt[file] = temp_df
+    return dico_dfs_txt
+
+def create_top_tens(dico_dfs_txt, year):
+    dico_temps = {}
+    top_ten_max_temps = pd.DataFrame(columns=['Filename', 'MaxDate', 'Max'])
+    top_ten_min_temps = pd.DataFrame(columns=['Filename', 'MinDate', 'Min'])
+    # Sets the df for a given year, not historic
+    top_ten_max_temps_given_year = pd.DataFrame(columns=['Filename', 'MaxDate', 'Max'])
+    top_ten_min_temps_given_year = pd.DataFrame(columns=['Filename', 'MinDate', 'Min'])
+    year = year
+
+    # Search in each df for the highest and lowest temperature
+    for filename, df in dico_dfs_txt.items():
+        dico_temps[filename] = {'max': float(df[df.columns[2:]].max().max()), 'min': float(df[df.columns[2:]].min().min())}
+
+        # Sets the df of the given year
+        df_year = df.loc[df['Date'].dt.year == year]
+
+        temp_cols = df.columns[2:]
+
+        # Series for the historic values
+        max_series, min_series = temp_series_setter(df, temp_cols, filename)
+
+        # Gets the TOP10 for the historic values
+        top_ten_max_temps, top_ten_min_temps = top_ten_creator(df, temp_cols, top_ten_max_temps, top_ten_min_temps, max_series, min_series)
+
+        if not df_year.empty:
+            # Series for the given year values
+            max_series_year, min_series_year = temp_series_setter(df_year, temp_cols, filename)
+
+            # Gets the TOP10 for the given year values
+            top_ten_max_temps_given_year, top_ten_min_temps_given_year = top_ten_creator(df, temp_cols, top_ten_max_temps_given_year,
+                                                                                        top_ten_min_temps_given_year,
+                                                                                        max_series_year, min_series_year)
+
+    top_ten_max_temps_given_year = top_ten_max_temps_given_year.sort_values(by='Max', ascending=False)
+    top_ten_min_temps_given_year = top_ten_min_temps_given_year.sort_values(by='Min', ascending=True)
+    top_ten_max_temps = top_ten_max_temps.sort_values(by='Max', ascending=False)
+    top_ten_min_temps = top_ten_min_temps.sort_values(by='Min', ascending=True)
+
+    return top_ten_max_temps, top_ten_min_temps, top_ten_min_temps_given_year, top_ten_max_temps_given_year
+
+dico_dfs_txt = create_df_dict()
+top_ten_max_temps, top_ten_min_temps, top_ten_min_temps_given_year, top_ten_max_temps_given_year = create_top_tens(dico_dfs_txt, 2025)
 
 #TODO read reports to get ideas on new metrics
 print('stop')
