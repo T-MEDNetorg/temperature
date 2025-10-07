@@ -126,7 +126,7 @@ class TMEDNetDatabase:
                 self.df_dicts_mhw[filename] = df
 
 
-    def mhw_at_5(self):
+    def create_mhw_dict(self):
         # Stores in a dict all the data of mhws.
         self.create_dict_with_mhw_able_dfs()
         self.dict_mhw = {}

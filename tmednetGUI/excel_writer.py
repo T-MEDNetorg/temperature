@@ -4,6 +4,7 @@ import time
 from pandas import ExcelWriter
 import marineHeatWaves as mhw
 import datetime
+import mhw_calculations as mhwc
 
 
 class ExcelReport:
@@ -55,7 +56,8 @@ class ExcelReport:
         df30tmax.to_excel(writer, '30Tmax', index=False)
         write_mhw = self.__check_year_difference()
         if write_mhw:
-            mhw_sheet = self.create_mhw()
+            # TODO CHANGED TO REFER TO THE NEW MHW_CALCULATIONS CHECK IF WORKS
+            mhw_sheet = mhwc.create_df_with_mhw(self.mhwdf)
             mhw_sheet.to_excel(writer, 'MHW', index=False)
             mhw_sheet['year'] = pd.DatetimeIndex(mhw_sheet['Date']).year
             dfmaxesmhw = mhw_sheet.loc[mhw_sheet.groupby(['year', 'Depth (m)'])['Max Intensity (ºC)'].idxmax().dropna()]
@@ -166,6 +168,7 @@ class ExcelReport:
             self.dfseasonal = pd.concat([self.dfseasonal, dfinterseason], ignore_index=True)
 
     # This method uses the mhw library to return the mhw of a given historic file.
+    # TODO SOON TO BE DEPRECATED
     def create_mhw(self):
         del self.mhwdf['Time']
         self.mhwdf['Date'] = pd.to_datetime(self.mhwdf['Date'], format='%d/%m/%Y')
