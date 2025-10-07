@@ -3,6 +3,8 @@ import pandas as pd
 from zipfile import ZipFile
 from os import listdir
 from os.path import isfile, join
+import tmednetGUI.marineHeatWaves as mhwcalc
+import tmednetGUI.mhw_calculations as mhwc
 
 
 class TMEDNetDatabase:
@@ -10,6 +12,7 @@ class TMEDNetDatabase:
     def __init__(self, dir="../src/input_files/Subidos/"):
         self.dir = dir
         self.df_dicts = self.__create_df_dict()
+        self.df_dicts_mhw = {}
 
     def get_df_dicts(self):
         return self.df_dicts
@@ -115,6 +118,21 @@ class TMEDNetDatabase:
         top_ten_min_temps = top_ten_min_temps.sort_values(by='Min', ascending=True)
 
         return top_ten_max_temps, top_ten_min_temps, top_ten_min_temps_given_year, top_ten_max_temps_given_year
+
+    def create_dict_with_mhw_able_dfs(self):
+        # Stores in a new dict only the dfs with more than 10 years of data, which are the ones that can give MHW data
+        for filename, df in self.df_dicts.items():
+            if df['Date'][len(df) - 1].year - df['Date'][0].year >= 10:
+                self.df_dicts_mhw[filename] = df
+
+
+    def mhw_at_5(self):
+        # Stores in a dict all the data of mhws.
+        self.create_dict_with_mhw_able_dfs()
+        self.dict_mhw = {}
+        for filename, df in self.df_dicts_mhw.items():
+            df_mhw = mhwc.create_df_with_mhw(df)
+            self.dict_mhw[filename] = df_mhw
 
 
     #TODO read reports to get ideas on new metrics

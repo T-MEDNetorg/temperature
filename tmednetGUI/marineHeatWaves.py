@@ -14,7 +14,7 @@ import scipy.ndimage as ndimage
 from datetime import date
 
 
-def detect(t, temp, climatologyPeriod=[None,None], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldSpells=False, alternateClimatology=False, Ly=False, previousClimatology=False):
+def detect(t, temp, climatologyPeriod=None, pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldSpells=False, alternateClimatology=False, Ly=False, previousClimatology=False):
     '''
 
     Applies the Hobday et al. (2016) marine heat wave definition to an input time
@@ -176,6 +176,9 @@ def detect(t, temp, climatologyPeriod=[None,None], pctile=90, windowHalfWidth=5,
     mhw['category'] = []
     mhw['rate_onset'] = [] # [deg C / day]
     mhw['rate_decline'] = [] # [deg C / day]
+
+    if climatologyPeriod is None:
+        climatologyPeriod = [None, None]
 
     #
     # Time and dates vectors
