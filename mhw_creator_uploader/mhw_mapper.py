@@ -243,8 +243,8 @@ class MHWMapper:
             ylabel = 'Duration (Nº days)'
         elif mode == 'intensity':
             ds = self.ds_MHW_sliced.rolling(time=self.ds_MHW_sliced.shape[0], min_periods=1).max()
-            ticks = np.arange(0, 10, 1)
-            levels = np.arange(0, 10, 0.1)
+            ticks = np.arange(0, 7, 1)
+            levels = np.arange(0, 7, 0.1)
             cmap = 'gist_heat_r'
             ylabel = 'Max Intensity (ºC)'
         end = time.time()
