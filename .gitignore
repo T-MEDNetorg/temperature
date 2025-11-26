@@ -1,5 +1,6 @@
 *.pyc
 tmednetGUI/__pycache__/
+tmednetGUI/temporal*
 mhw_creator_uploader/upload_images.sh
 exit
 venv/
