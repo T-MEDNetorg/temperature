@@ -151,3 +151,6 @@ class TMEDNetDatabase:
                     data.to_excel(writer, sheet_name=str(key))
 
     #TODO read reports to get ideas on new metrics
+    #TODO fer una diferencia entre historic i top en un lloc
+    #TODO fer codis de colors per aquestes coses
+    #TODO grafica de barres amb els valors de tots els sites, sigui de cualsevol indicador
