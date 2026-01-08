@@ -8,6 +8,8 @@ import numpy as np
 def create_df_with_mhw(df):
     del df['Time']
     nufile = df.groupby('Date').mean()
+    if isinstance(nufile.index[0], str):
+        nufile.index = pd.to_datetime(nufile.index, dayfirst=True)
     dates = [x.date() for x in nufile.index]
     t = [x.toordinal() for x in dates]
     t = np.array(t)

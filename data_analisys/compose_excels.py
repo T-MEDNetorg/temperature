@@ -16,13 +16,16 @@ import cartopy.feature as cfeature
 
 EXCEL_PATH = "../src/input_files/activity data/sites_full.xlsx"
 SITES_DIR = "../src/input_files/Subidos"
-SITES_FILE = "./sites_year_v3.csv"
+SITES_FILE = "./sites_year_v6.csv"
 IMAGE_PATH = "./maps"
 LOGO_PATH = "../res/logos/TMEDNET_Black.jpeg"
 
 
-def ass_points_to_polygons(df, gdf_poly):
-    df['geometry'] = df.apply(lambda row: Point(row['longitude'], row['latitude']), axis=1)
+def ass_points_to_polygons(df, gdf_poly=gpd.read_file("./ecoregions.geojson")):
+    try:
+        df['geometry'] = df.apply(lambda row: Point(row['longitude'], row['latitude']), axis=1)
+    except:
+        df['geometry'] = df.apply(lambda row: Point(row['Longitude'], row['Latitude']), axis=1)
     gdf_points = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
     gdf_poly = gdf_poly.to_crs(gdf_points.crs)
     joined = gpd.sjoin(gdf_points, gdf_poly, how="left", predicate="within")
@@ -30,10 +33,15 @@ def ass_points_to_polygons(df, gdf_poly):
 
 df = pd.read_csv(SITES_FILE, sep=',')
 df['start_year'].loc[df['id'] == 220] = 2024.0
+df['initialized'].loc[df['id'] == 220] = 1
+df['start_year'].loc[df['id'] == 241] = 2024.0
+df['initialized'].loc[df['id'] == 241] = 1
+#df = df.loc[df['start_year'] < 2024.0] # Change when I want whole series
 gdf_poly = gpd.read_file("./ecoregions.geojson")
 
 
-df_data_peryear = pd.DataFrame(range(2002, 2026, 1), columns=['Year'])
+# Cambiar años luego
+df_data_peryear = pd.DataFrame(range(1997, 2024, 1), columns=['Year'])
 joined, gdf_points = ass_points_to_polygons(df, gdf_poly)
 
 df_ecos = pd.DataFrame(joined['ECOREGION'].unique(), columns=['Ecoregion'])
@@ -74,6 +82,7 @@ def get_data_MPA():
     return first_year
 
 mpa_df = get_data_MPA()
+
 def get_MPA(first_year, multi=False):
 
 
@@ -99,10 +108,12 @@ def get_MPA(first_year, multi=False):
     plt.title('Evolution of MPA with monitoring sites')
     if not multi:
         plt.savefig('insitu_mpa.png')
+        per_year.to_excel('mpa.xlsx')
     else:
         if not np.isnan(multi):
             plt.ylim(YMIN_mpa, YMAX_mpa)
             plt.xlim(XMIN_mpa, XMAX_mpa)
+            plt.xticks([XMIN_mpa, XMAX_mpa])
             plt.savefig(f'./sites/insitu_mpa_{int(multi)}.png')
 
     plt.clf()
@@ -130,7 +141,7 @@ YMIN_mpa = 0
 XMAX_mpa = per_year['first_year'].max()
 XMIN_mpa = per_year['first_year'].min()
 
-YMAX_entries = 30000000
+YMAX_entries = 200000 # Touch everytime, depending what you want to show
 YMIN_entries = 0
 
 
@@ -185,7 +196,8 @@ def paste_logo(baseim, logoim, output):
 
 def create_cumsum_sites_plot(df, multi=False):
     df_sites_cumsum = df.loc[df['initialized'] == 1].groupby('start_year').count()['site'].cumsum().rename('total_sites').reset_index()
-
+    if multi == 2023.0:
+        df_sites_cumsum.to_excel('sites.xlsx')
     ax = sns.lineplot(data=df_sites_cumsum, x="start_year", y="total_sites", color='#008080')
     plt.fill_between(df_sites_cumsum['start_year'].values, df_sites_cumsum['total_sites'].values, color='#008080')
     ax.yaxis.grid(color='gray', linestyle='dashed')
@@ -201,6 +213,7 @@ def create_cumsum_sites_plot(df, multi=False):
                 print('d')
             plt.ylim(YMIN, YMAX)
             plt.xlim(XMIN, XMAX)
+            plt.xticks([XMIN, XMAX])
             plt.savefig(f'./sites/insitu_sites_{int(multi)}.png')
     plt.clf()
     df_sites_cumsum.to_excel('sites_cumsum.xlsx')
@@ -221,15 +234,19 @@ def read_zip_file(zip_path, ecoregion, eco):
                 df_data_peryear_ecos['Count'].loc[(df_data_peryear_ecos['Year'] == year) & (df_data_peryear_ecos['Ecoregion'] == ecoregion)] += np.count_nonzero(~np.isnan(zip_df.loc[zip_df['Date'].dt.year == year][cols[2:]].values))
     except:
         err_files.append(zip_path.split('_')[3])
+
 #TODO DESCARGAR DATABASES DE TMEDNET
-def iterate_zipdir(sites_dir, eco):
+def iterate_zipdir(sites_dir, eco=False):
 
     dir_files = [f for f in listdir(sites_dir) if isfile(join(sites_dir, f))]
     total_entries = 0
     for file in dir_files:
 
         ecoregion = joined.loc[joined['id'] == int(file.split('_')[2])]['ECOREGION']
-        read_zip_file("../src/input_files/Subidos/" + file, ecoregion.iloc[0], eco)
+        try:
+            read_zip_file("../src/input_files/Subidos/" + file, ecoregion.iloc[0], eco)
+        except:
+            print(file)
 
 def create_cumsum_entries_plot(sites_path, multi=False):
 
@@ -241,15 +258,17 @@ def create_cumsum_entries_plot(sites_path, multi=False):
             df_entries_cumsum['total_entries'] = df_entries_cumsum['Count'].loc[df_entries_cumsum['Year'] <= multi].cumsum()
         else:
             return
+    if multi == 2023.0:
+        df_entries_cumsum.to_excel('entries.xlsx')
     ax = sns.lineplot(data=df_entries_cumsum, x="Year", y="total_entries", color='#008080')
     plt.fill_between(df_entries_cumsum['Year'].values, df_entries_cumsum['total_entries'].values, color='#008080')
     ax.yaxis.grid(color='gray', linestyle='dashed')
     ax.set_axisbelow(True)
     plt.xlabel('')
-    plt.ylabel('Nº of entries')
-    plt.title(r'Evolution of $\it{in\ situ}$ observations')
+    plt.ylabel('Nº of entries (Tens of Millions)')
+    plt.title(r'Evolution of $\it{in\ situ}$ observations (Tens of Millions)')
     formatter = mtick.ScalarFormatter(useMathText=True)
-    formatter.set_powerlimits((6, 6))  # Força l'exponent a 10^6
+    formatter.set_powerlimits((7, 7))  # Força l'exponent a 10^6
     ax.yaxis.set_major_formatter(formatter)
     if not multi:
         plt.savefig('insitu_entries.png')
@@ -257,7 +276,8 @@ def create_cumsum_entries_plot(sites_path, multi=False):
     else:
         if not np.isnan(multi):
             plt.ylim(YMIN_entries, YMAX_entries)
-            plt.xlim(XMIN, XMAX + 5)
+            plt.xlim(XMIN, XMAX) # removed +5 on years xmax
+            plt.xticks([XMIN, XMAX])
             plt.savefig(f'./sites/insitu_entries_{int(multi)}.png')
     plt.clf()
 
@@ -318,8 +338,8 @@ def create_cumsum_entries_plot_eco(sites_path, multi=False):
     ax.set_axisbelow(True)
     plt.legend(loc='upper left', title='Ecoregion')
     plt.xlabel('')
-    plt.ylabel('Nº of entries')
-    plt.title(r'Evolution of $\it{In\ Situ}$ observations')
+    plt.ylabel('Nº of entries (Tens of Millions)')
+    plt.title(r'Evolution of $\it{in\ situ}$ observations (Tens of Millions)')
     formatter = mtick.ScalarFormatter(useMathText=True)
     formatter.set_powerlimits((6, 6))  # Força l'exponent a 10^6
     ax.yaxis.set_major_formatter(formatter)
@@ -418,11 +438,22 @@ def step_by_step_plots():
     years = list(df['start_year'].unique())
     years.sort()
     for year in years:
+        if year == 2023.0:
+            print('h')
         create_cumsum_sites_plot(df.loc[df['start_year'] <= year], year)
         create_cumsum_entries_plot(SITES_DIR, year)
         get_MPA(mpa_df.loc[mpa_df['first_year'] <= year], year)
+
+
+def all_plots():
+    create_cumsum_sites_plot(df)
+    create_cumsum_entries_plot(SITES_DIR)
+    get_MPA(mpa_df)
+
 iterate_zipdir(SITES_DIR, False)
+create_cumsum_entries_plot(SITES_DIR)
 #step_by_step_plots()
+#all_plots()
 
 #create_cumsum_sites_plot(df)
 #create_cumsum_entries_plot(SITES_DIR)
@@ -431,12 +462,12 @@ iterate_zipdir(SITES_DIR, False)
 #generate_gif('./sites', 'sites_evo')
 #generate_gif('./sites', 'entries')
 #generate_gif(IMAGE_PATH, 'MME')
-yearly_map(df.loc[df['initialized'] == 1], 'Sites')
+"""yearly_map(df.loc[df['initialized'] == 1], 'Sites')
 filenames = [f for f in listdir(IMAGE_PATH) if isfile(join(IMAGE_PATH, f))]
 for file in filenames:
     if file.split('_')[1] == 'sites':
         paste_logo('./maps/'+file, LOGO_PATH, './maps/'+file)
-generate_gif(IMAGE_PATH, 'Sites')
+generate_gif(IMAGE_PATH, 'Sites')"""
 '''
 
 step_by_step_plots()

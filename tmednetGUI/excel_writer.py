@@ -36,7 +36,9 @@ class ExcelReport:
         dfmaxesdepth = self.dfexcel.loc[self.dfexcel.groupby(['year', 'depth(m)'])['max'].idxmax().dropna()][
             ['year', 'depth(m)', 'date', 'max']]
         dfmaxesdepth.sort_values(['depth(m)', 'max'], ascending=False, inplace=True)
-        dfmaxes_month = self.dfexcel.loc[self.dfexcel.groupby(['year', 'month'])['max'].idxmax()][['year', 'month', 'date', 'max']]
+        #dfmaxes_month = self.dfexcel.loc[self.dfexcel.groupby(['year', 'month'])['max'].idxmax()][['year', 'month', 'date', 'max']]
+        dfmaxes_month = self.dfexcel.dropna(subset=['max']).loc[
+            lambda df: df.groupby(['year', 'month'])['max'].idxmax(), ['year', 'month', 'date', 'max']] #Ignores NAN
         dfmaxes_month.sort_values('max', ascending=False, inplace=True)
         dfmaxesdepth_month = self.dfexcel.loc[self.dfexcel.groupby(['year', 'month', 'depth(m)'])['max'].idxmax().dropna()][
             ['year', 'month', 'depth(m)', 'date', 'max']]
