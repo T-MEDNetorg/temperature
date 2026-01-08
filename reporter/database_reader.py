@@ -90,6 +90,7 @@ class TMEDNetDatabase:
 
         # Search in each df for the highest and lowest temperature
         for filename, df in self.df_dicts.items():
+            filename = filename.split('_')[3]
             dico_temps[filename] = {'max': float(df[df.columns[2:]].max().max()), 'min': float(df[df.columns[2:]].min().min())}
 
             # Sets the df of the given year
@@ -117,7 +118,7 @@ class TMEDNetDatabase:
         top_ten_max_temps = top_ten_max_temps.sort_values(by='Max', ascending=False)
         top_ten_min_temps = top_ten_min_temps.sort_values(by='Min', ascending=True)
 
-        return top_ten_max_temps, top_ten_min_temps, top_ten_min_temps_given_year, top_ten_max_temps_given_year
+        return top_ten_max_temps, top_ten_min_temps, top_ten_max_temps_given_year, top_ten_min_temps_given_year
 
     def create_dict_with_mhw_able_dfs(self):
         # Stores in a new dict only the dfs with more than 10 years of data, which are the ones that can give MHW data
@@ -132,7 +133,24 @@ class TMEDNetDatabase:
         self.dict_mhw = {}
         for filename, df in self.df_dicts_mhw.items():
             df_mhw = mhwc.create_df_with_mhw(df)
-            self.dict_mhw[filename] = df_mhw
+            self.dict_mhw[filename.split('_')[3]] = df_mhw
 
+    def create_excel(self, dataset, name):
+        sheet_name = ""
+        with pd.ExcelWriter(name) as writer:
+            if type(dataset) != dict:
+                for data in dataset:
+                    if sheet_name == str(data.columns[-1]):
+                        sheet_name = sheet_name + "_lastyear"
+                    else:
+                        sheet_name = str(data.columns[-1])
+
+                    data.to_excel(writer, sheet_name=sheet_name)
+            else:
+                for key, data in dataset.items():
+                    data.to_excel(writer, sheet_name=str(key))
 
     #TODO read reports to get ideas on new metrics
+    #TODO fer una diferencia entre historic i top en un lloc
+    #TODO fer codis de colors per aquestes coses
+    #TODO grafica de barres amb els valors de tots els sites, sigui de cualsevol indicador

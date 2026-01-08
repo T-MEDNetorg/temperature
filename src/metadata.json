@@ -777,6 +777,54 @@
             "start_year": "2021",
             "end_year": "2024",
             "institution": ""
+        },
+        "241": {
+            "lat": "34.9637",
+            "long": "34.0873",
+            "site_number": "241",
+            "site_name": "Cape Greco",
+            "site_code": "",
+            "eco_region": "E-Levantine",
+            "sub_basin": "E-Levantine",
+            "start_year": "2024",
+            "end_year": "2025",
+            "institution": ""
+        },
+        "244": {
+            "lat": "42.4832",
+            "long": "18.7146",
+            "site_number": "244",
+            "site_name": "Drazin Vrt",
+            "site_code": "",
+            "eco_region": "S-Adriatic",
+            "sub_basin": "S-Adriatic",
+            "start_year": "2024",
+            "end_year": "2025",
+            "institution": ""
+        },
+        "246": {
+            "lat": "42.5102",
+            "long": "18.6797",
+            "site_number": "246",
+            "site_name": "Sopot",
+            "site_code": "",
+            "eco_region": "S-Adriatic",
+            "sub_basin": "S-Adriatic",
+            "start_year": "2024",
+            "end_year": "2025",
+            "institution": ""
+        },
+        "247": {
+            "lat": "42.4592",
+            "long": "18.6810",
+            "site_number": "247",
+            "site_name": "Opatovo",
+            "site_code": "",
+            "eco_region": "S-Adriatic",
+            "sub_basin": "S-Adriatic",
+            "start_year": "2024",
+            "end_year": "2025",
+            "institution": ""
         }
     },
     "regions": {

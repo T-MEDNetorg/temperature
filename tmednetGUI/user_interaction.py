@@ -131,6 +131,8 @@ class tmednet(tk.Frame):
         toolsmenu.add_command(label='Create Excel',
                               command=lambda: self.__window_browser('Select file and output file name',
                                                                   self.write_excel, 'Input: '))
+        toolsmenu.add_command(label='Create Full Flow',
+                              command=self.__create_full_workflow)
         toolsmenu.add_command(label='Create netCDF',
                               command=lambda: self.__window_browser('Select historical file',
                                                                   self.__generate_netCDF, 'Historical: '))
@@ -613,6 +615,10 @@ class tmednet(tk.Frame):
         for i in range(int(year), historic.last_year):
             historic.multidepth_anomaly_plotter(i, ['10', '15', '20', '25'], zoom=True)
         self.console_writer('Plots saved at output_images', 'action')
+
+    def __create_full_workflow(self):
+        pass
+        #TODO this
 
     @staticmethod
     def help():
